@@ -1,2 +1,5 @@
-# weae795-cyber.github.io
-Deadman's Vault — public deadman control terminal
+# Deadman's Vault
+
+Public deadman control terminal.
+
+**Live site:** https://weae795-cyber.github.io/
