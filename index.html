@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Deadman's Vault</title>
+<meta name="theme-color" content="#08090b"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#08090b;--surface:#111318;--raised:#181b22;--fg:#e8e4d8;--muted:#8a8478;--subtle:#5c5850;--accent:#c4c9d2;--danger:#b54a3c;--border:#2a2d34;--display:'Libre Baskerville',serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--mono);-webkit-font-smoothing:antialiased}
+body::before{content:'';pointer-events:none;position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,#0008 100%),linear-gradient(180deg,#12141acc 0%,transparent 28%,transparent 78%,#0007 100%)}
+#app{position:relative;z-index:1;max-width:64rem;margin:0 auto;min-height:100dvh;padding:2rem 1rem;display:flex;flex-direction:column;gap:2rem}
+@media(min-width:640px){#app{padding:3rem 2rem;gap:2.5rem}}
+.kicker{margin:0;font-size:.75rem;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
+h1{margin:.75rem 0 0;font-family:var(--display);font-size:clamp(1.35rem,1rem + 2.4vw,2.05rem);font-weight:700;line-height:1.3;text-wrap:balance}
+.panel{border:1px solid var(--border);background:var(--surface);padding:1.5rem 1rem}
+@media(min-width:640px){.panel{padding:1.5rem 2rem}}
+.timer-label,.status-line{margin:0;text-align:center;font-size:.75rem;font-weight:500;letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
+.timer{display:flex;align-items:flex-end;justify-content:center;gap:.5rem;margin:1rem 0 1.25rem;font-size:clamp(1.7rem,1.1rem + 3.2vw,3.15rem);font-weight:500;letter-spacing:.08em;font-variant-numeric:tabular-nums;line-height:1}
+@media(min-width:640px){.timer{gap:1rem}}
+.tblock{display:flex;flex-direction:column;align-items:center;gap:.5rem;min-width:3rem}
+.tblock span:last-child{font-size:.75rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.colon{color:var(--muted);margin-bottom:1.5rem}
+.vaults{display:grid;gap:1rem}
+@media(min-width:768px){.vaults{grid-template-columns:1fr 1fr}}
+.vault{display:flex;flex-direction:column;gap:1.25rem;min-height:12rem;border:1px solid var(--border);background:var(--surface);padding:1.25rem 1.5rem}
+.vault-top,.vault-foot{display:flex;justify-content:space-between;align-items:center;gap:.75rem}
+.vault h2{margin:0;font-family:var(--display);font-size:1.125rem;font-weight:400;line-height:1.35}
+.vault-foot{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.seal{color:var(--accent);font-weight:500;letter-spacing:.2em}
+.seal.hot{color:var(--danger)}
+form{display:flex;flex-direction:column;gap:1rem}
+label{font-size:.75rem;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
+input[type=text]{height:3rem;width:100%;border:1px solid var(--border);border-radius:.5rem;background:var(--raised);color:var(--fg);font-family:var(--mono);font-size:.875rem;letter-spacing:.18em;padding:0 1rem;outline:none}
+input[type=text]::placeholder{color:var(--subtle);letter-spacing:normal}
+input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+button{height:3rem;border:0;border-radius:.5rem;background:var(--accent);color:var(--bg);font-family:var(--mono);font-size:.75rem;font-weight:500;letter-spacing:.28em;text-transform:uppercase;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:not(:disabled):active{transform:scale(.96)}
+.msg{min-height:1.5rem;margin:0;text-align:center;font-size:.875rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--subtle)}
+.msg.reset{color:var(--accent)}
+.msg.denied{color:var(--danger)}
+.danger{color:var(--danger)}
+.shake{animation:shake-x 280ms ease-out}
+@keyframes shake-x{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@media(prefers-reduced-motion:reduce){.shake{animation:none}button:not(:disabled):active{transform:none}}
+</style>
+</head>
+<body>
+<main id="app">
+<header>
+<p class="kicker">Restricted terminal</p>
+<h1>This Vault is secured with a Dead man's Trigger, those who betray the ones that trust them also betray themselves.</h1>
+</header>
+<section class="panel" id="countdown" aria-label="Deadman countdown">
+<p class="timer-label">Deadman trigger</p>
+<div class="timer" id="timer" aria-live="polite">
+<div class="tblock"><span id="d">05</span><span>Days</span></div>
+<span class="colon" aria-hidden="true">:</span>
+<div class="tblock"><span id="h">00</span><span>Hrs</span></div>
+<span class="colon" aria-hidden="true">:</span>
+<div class="tblock"><span id="m">00</span><span>Min</span></div>
+<span class="colon" aria-hidden="true">:</span>
+<div class="tblock"><span id="s">00</span><span>Sec</span></div>
+</div>
+<p class="status-line" id="hold">Release withheld while countdown holds</p>
+</section>
+<section class="vaults" aria-label="Vaults">
+<article class="vault">
+<div class="vault-top"><p class="kicker">Vault 01</p>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c9d2" stroke-width="1.6" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+<h2>Civil/Regulatory/Personal Lives</h2>
+<div class="vault-foot"><span>Contents withheld</span><span class="seal" data-seal>Sealed</span></div>
+</article>
+<article class="vault">
+<div class="vault-top"><p class="kicker">Vault 02</p>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c9d2" stroke-width="1.6" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+<h2>Documentation/Signed-Notarized-Statements/Evidence in support of Criminal proceedings</h2>
+<div class="vault-foot"><span>Contents withheld</span><span class="seal" data-seal>Sealed</span></div>
+</article>
+</section>
+<section class="panel">
+<form id="auth">
+<label for="token">Authentication Token</label>
+<input id="token" name="token" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Enter token"/>
+<button type="submit" id="go" disabled>Authenticate</button>
+<p class="msg" id="msg" aria-live="assertive">&nbsp;</p>
+</form>
+</section>
+</main>
+<script>
+const KEY='deadman-control-v1';
+const FIVE=5*24*60*60*1000;
+const PEN=8*60*60*1000;
+const START=Date.parse('2026-09-03T02:05:00.000Z');
+const ALWAYS=new Set(['ALEinJDG','RHEC21904','FTP208']);
+const ONCE=new Set(['12345','ABCDE']);
+function load(){
+  try{
+    const p=JSON.parse(localStorage.getItem(KEY)||'null');
+    if(p&&typeof p.startedAt==='number'){
+      return {startedAt:p.startedAt,deductedMs:typeof p.deductedMs==='number'?p.deductedMs:0,usedOneTime:Array.isArray(p.usedOneTime)?p.usedOneTime.filter(x=>typeof x==='string'):[]};
+    }
+  }catch(e){}
+  const fresh={startedAt:START,deductedMs:0,usedOneTime:[]};
+  localStorage.setItem(KEY,JSON.stringify(fresh));
+  return fresh;
+}
+function save(s){localStorage.setItem(KEY,JSON.stringify(s));}
+function pad(n){return String(n).padStart(2,'0');}
+let state=load();
+const token=document.getElementById('token');
+const go=document.getElementById('go');
+const msg=document.getElementById('msg');
+const panel=document.getElementById('countdown');
+const hold=document.getElementById('hold');
+const timerEl=document.getElementById('timer');
+token.addEventListener('input',()=>{go.disabled=!token.value.trim();});
+function remaining(){return Math.max(0,state.startedAt+FIVE-state.deductedMs-Date.now());}
+function render(){
+  const total=Math.floor(remaining()/1000);
+  document.getElementById('d').textContent=pad(Math.floor(total/86400));
+  document.getElementById('h').textContent=pad(Math.floor((total%86400)/3600));
+  document.getElementById('m').textContent=pad(Math.floor((total%3600)/60));
+  document.getElementById('s').textContent=pad(total%60);
+  const triggered=remaining()<=0;
+  timerEl.classList.toggle('danger',triggered);
+  hold.textContent=triggered?'Release sequence armed':'Release withheld while countdown holds';
+  document.querySelectorAll('[data-seal]').forEach(el=>{
+    el.textContent=triggered?'Release pending':'Sealed';
+    el.classList.toggle('hot',triggered);
+  });
+}
+function setMsg(kind,text){
+  msg.textContent=text;
+  msg.className='msg'+(kind?' '+kind:'');
+  panel.classList.remove('shake');
+  if(kind==='denied'){void panel.offsetWidth;panel.classList.add('shake');}
+}
+document.getElementById('auth').addEventListener('submit',e=>{
+  e.preventDefault();
+  const value=token.value.trim();
+  if(!value)return;
+  const used=new Set(state.usedOneTime);
+  if(ALWAYS.has(value)||(ONCE.has(value)&&!used.has(value))){
+    if(ONCE.has(value))state.usedOneTime=[...state.usedOneTime,value];
+    state.startedAt=Date.now();
+    state.deductedMs=0;
+    save(state);
+    setMsg('reset','Deadman Service Reset');
+  }else{
+    state.deductedMs+=PEN;
+    save(state);
+    setMsg('denied','Denied');
+  }
+  token.value='';
+  go.disabled=true;
+  render();
+});
+render();
+setInterval(render,1000);
+</script>
+</body>
+</html>
